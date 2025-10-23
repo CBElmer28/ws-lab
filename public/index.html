@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat en Tiempo Real</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    #chat {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      background: #f9f9f9;
+    }
+
+    #input {
+      margin-top: 10px;
+    }
+
+    #mensaje {
+      width: 70%;
+      padding: 8px;
+    }
+
+    #enviar {
+      padding: 8px 12px;
+    }
+
+    #estado {
+      font-size: 0.9em;
+      color: gray;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>💬 Chat en tiempo real</h2>
+
+  <div id="chat"></div>
+  <div id="estado"></div>
+
+  <div id="input">
+    <input type="text" id="mensaje" placeholder="Escribe un mensaje..." />
+    <button id="enviar">Enviar</button>
+  </div>
+
+  <!-- Cliente Socket.IO v4.7.5 desde CDN -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+  const socket = io();
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('mensaje');
+  const btn = document.getElementById('enviar');
+  const estado = document.getElementById('estado');
+
+  // Pedir nombre del usuario al entrar
+  let username = prompt('Ingresa tu nombre:') || 'Usuario';
+  socket.emit('user:setName', username);
+
+  // Unirse a la sala "general"
+  socket.emit('room:join', 'general');
+
+  btn.addEventListener('click', () => {
+      const texto = input.value.trim();
+      if (texto !== '') {
+        socket.emit('chat:message', { room: 'general', message: texto });
+        agregarMensaje(`Tú: ${texto}`); 
+        input.value = '';
+      }
+    });
+
+  input.addEventListener('input', () => {
+    socket.emit('chat:typing', { room: 'general' });
+  });
+
+      // Escuchar mensaje
+    socket.on('chat:message', (data) => {
+      if (data.user !== username) {
+        agregarMensaje(`${data.user}: ${data.message}`);
+      }
+    });
+
+  socket.on('chat:typing', (msg) => {
+    estado.textContent = msg;
+    setTimeout(() => (estado.textContent = ''), 1500);
+  });
+
+  function agregarMensaje(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+</script>
+</body>
+</html>
